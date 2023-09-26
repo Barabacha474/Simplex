@@ -1,10 +1,10 @@
 # Revised Simplex Method
 
-# Prerequisites
+## Prerequisites
 * Python 3.10 or newer
 * Pip
 
-# How to run locally
+## How to run locally
 1. Clone the repository
 2. Go to the root of our project:  
    `cd Simplex`
@@ -13,5 +13,5 @@
 4. Run program:  
    `python main.py`
 
-# Run tests
+## Run tests
 `python -m unittest tests\test.py`
