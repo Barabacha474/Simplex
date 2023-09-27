@@ -1,1 +1,1 @@
-from .simplex import Simplex
+from .simplex import Simplex, InfeasibleSolution, SimplexSolution

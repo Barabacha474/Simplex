@@ -28,21 +28,36 @@ class InfeasibleSolution(Exception):
 class Simplex:
     def __init__(
         self,
-        A: npt.NDArray[np.double],
-        b: npt.NDArray[np.double],
-        C: npt.NDArray[np.double],
+        A: npt.NDArray,
+        b: npt.NDArray,
+        C: npt.NDArray,
         eps: float = 1e-4,
     ):
         """Initialization of simplex method solver.
 
         Args:
-            A (npt.NDArray[np.double]): (self.m x self.n) matrix representing the constraint coefficients
-            b (npt.NDArray[np.double]): self.m-column vector representing the constraint right-hand side
-            C (npt.NDArray[np.double]): self.n-vector representing the objective-function coefficients
+            A (npt.NDArray): (m x n) matrix representing the constraint coefficients
+            b (npt.NDArray): m-vector representing the constraint right-hand side
+            C (npt.NDArray): n-vector representing the objective-function coefficients
             eps (float, optional): Approximation accuracy. Defaults to 1e-4.
-        """  # noqa: E501
-        self.A = np.hstack((A, np.identity(A.shape[0])))
-        self.C = np.hstack((C, np.zeros(A.shape[0])))
+        """
+
+        assert A.ndim == 2, "A is not a matrix"
+        assert b.ndim == 1, "b is not a vector"
+        assert C.ndim == 1, "C is not a vector"
+        assert (
+            A.shape[0] == b.size
+        ), "Length of vector b does not correspond to # of rows of matrix A"
+        assert (
+            A.shape[1] == C.size
+        ), "Length of vector C does not correspond to # of cols of matrix A"
+
+        self.A = np.hstack(
+            (A, np.identity(A.shape[0], dtype=np.double))
+        )  # Adding slack variables
+        self.C = np.hstack(
+            (C, np.zeros(A.shape[0], dtype=np.double))
+        )  # Adding slack variables
         self.b = b
         self.eps = eps
         self.m, self.n = self.A.shape
@@ -65,8 +80,8 @@ class Simplex:
         """  # noqa: E501
 
         # Step 0
-        B = np.identity(self.m)
-        C_B = np.zeros(self.m)
+        B = np.identity(self.m, dtype=np.double)
+        C_B = np.zeros(self.m, dtype=np.double)
         basic = list(range(self.n - self.m, self.n))
         while True:
             # Step 1
@@ -116,6 +131,7 @@ class Simplex:
                     if j < self.n - self.m:
                         X_decision[j] = round(X_B[i], round_decimals)
                 return SimplexSolution(X_decision, round(z.item(), round_decimals))
+
             # Step 3
             P_j = self.A[:, [entering_j]]
             B_inv_times_P_j = B_inv @ P_j
@@ -171,7 +187,7 @@ def main():
     b = np.array([24, 6, 1, 2], dtype=np.double)
     C = np.array([5, 4], dtype=np.double)
     eps = 1e-9
-    simplex = Simplex(A, b.T, C, eps)
+    simplex = Simplex(A, b, C, eps)
     solution = simplex.solve()
     print(solution)
 
