@@ -1,17 +1,16 @@
 from copy import deepcopy
 
+
 class Matrix:
     _mat = list([])
 
-        
-    def __init__(self, arr = list([])):
+    def __init__(self, arr=list([])):
         self._mat = arr
 
     def mInput(self):
         while (s := input()) != "":
-            row = list(map(int, s.split())) 
+            row = list(map(float, s.split()))
             self._mat.append(row)
-            
 
     def __mul__(self, matrix: 'Matrix') -> 'Matrix':
         result = [[sum(a * b for a, b in zip(self_row, matrix_col))
@@ -23,7 +22,7 @@ class Matrix:
 
         if len(self._mat) == 2:
             return Matrix([[self._mat[1][1] / det, -1 * self._mat[0][1] / det],
-                    [-1 * self._mat[1][0] / det, self._mat[0][0] / det]])
+                           [-1 * self._mat[1][0] / det, self._mat[0][0] / det]])
 
         inv = Matrix()
         for i in range(len(self._mat)):
@@ -33,7 +32,7 @@ class Matrix:
             inv._mat.append(row)
         inv = inv.mTranspose()
         matrix = inv.getMatrix()
-        
+
         matrix = list(list(map(lambda x: x/det, row)) for row in matrix)
 
         return Matrix(matrix)
@@ -57,7 +56,7 @@ class Matrix:
 
     def getMatrix(self) -> list:
         return self._mat
-    
+
     def concat(self, matrix: 'Matrix') -> 'Matrix':
         result = deepcopy(self)
         for i in range(len(self._mat)):
@@ -68,33 +67,32 @@ class Matrix:
 
 
 class IdentityMatrix(Matrix):
-    def __init__(self, len):
-        self._mat = [[0]*len]*len
-        for i in range(len):
-            for j in range(len):
+    def __init__(self, length):
+        self._mat = [[0]*length]*length
+        for i in range(length):
+            for j in range(length):
                 if i == j:
                     self._mat[i][j] = 1
 
 
 class ZeroMatrix(Matrix):
-    def __init__(self, len):
-        self._mat = [[0]*len]*len
+    def __init__(self, length):
+        self._mat = [[0]*length]*length
 
 
 class Vector:
     _v = []
 
-    def __init__(self, arr = list()):
+    def __init__(self, arr=list()):
         self._v = arr
-
 
     def vInput(self):
         s = input()
-        self._v = [int(x) for x in s.split()]
+        self._v = [float(x) for x in s.split()]
         # For elimination of null string after vector
         input()
 
-    def __mul__(self, v2: 'Vector') -> 'Vector':
+    def __mul__(self, v2: 'Vector') -> float:
         dot = 0
         for i in range(len(v2.getVector())):
             dot += self._v[i] * v2._v[i]
@@ -105,4 +103,3 @@ class Vector:
 
     def getVector(self):
         return self._v
-
