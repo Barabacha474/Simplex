@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class Matrix:
     _mat = list([])
 
@@ -55,6 +57,14 @@ class Matrix:
 
     def getMatrix(self) -> list:
         return self._mat
+    
+    def concat(self, matrix: 'Matrix') -> 'Matrix':
+        result = deepcopy(self)
+        for i in range(len(self._mat)):
+            for j in matrix.getMatrix()[i]:
+                result.getMatrix()[i].append(j)
+
+        return result
 
 
 class IdentityMatrix(Matrix):
