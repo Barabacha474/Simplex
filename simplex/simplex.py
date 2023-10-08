@@ -1,9 +1,7 @@
+from math import log10
 from dataclasses import dataclass
-
-import numpy as np
-import numpy.typing as npt
-
-from exceptions import *
+from simplex.models import Matrix, IdentityMatrix, Vector
+from simplex.exceptions import InfeasibleSolution
 
 
 @dataclass
@@ -11,48 +9,53 @@ class SimplexSolution:
     """Stores a solution to simplex method.
 
     Args:
-        decision_variables (npt.NDArray[np.double]): Vector of decision variables
+        decision_variables (Vector): Vector of decision variables
         value (float): Solution to maximization problem
     """
 
-    decision_variables: npt.NDArray[np.double]
+    decision_variables: Vector
     value: float
 
 
 class Simplex:
     def __init__(self,
-                 A: npt.NDArray,
-                 b: npt.NDArray,
-                 C: npt.NDArray,
+                 A: Matrix,
+                 b: Vector,
+                 C: Vector,
                  accuracy: float = 1e-4):
         """Initialization of simplex method solver.
 
         Args:
-            A (npt.NDArray): (m x n) matrix representing the constraint coefficients
-            b (npt.NDArray): m-vector representing the constraint right-hand side
-            C (npt.NDArray): n-vector representing the objective-function coefficients
+            A (Matrix): (m x n) matrix representing the constraint coefficients
+            b (Vector): m-column vector representing the constraint right-hand side
+            C (Vector): n-row vector representing the objective-function coefficients
             accuracy (float, optional): Approximation accuracy. Defaults to 1e-4.
         """
 
         # Sanity checks for correct input
-        assert A.ndim == 2, "A is not a matrix"
-        assert b.ndim == 1, "b is not a vector"
-        assert C.ndim == 1, "C is not a vector"
-        assert A.shape[0] == b.size, "Length of vector b does not correspond to # of rows of matrix A"
-        assert A.shape[1] == C.size, "Length of vector C does not correspond to # of cols of matrix A"
+        assert isinstance(A, Matrix), "A is not a matrix"
+        assert isinstance(b, Vector), "b is not a vector"
+        assert isinstance(C, Vector), "C is not a vector"
+        assert A.getHeight() == b.getWidth(
+        ), "Length of vector b does not correspond to # of rows of matrix A"
+        assert A.getWidth() == C.getWidth(
+        ), "Length of vector C does not correspond to # of cols of matrix A"
+        assert accuracy > 0, "Accuracy should be greater than zero"
 
         # Add slack variables
-        self.A = np.hstack((A, np.identity(A.shape[0], dtype=np.double)))
-        self.C = np.hstack((C, np.zeros(A.shape[0], dtype=np.double)))
-        self.b = b
+        self.A: Matrix = A.hconcat(IdentityMatrix(A.getHeight()))
+        self.C: Vector = C.hconcat(Vector([0]*A.getHeight()))
+        self.b: Vector = b
 
-        self.m, self.n = self.A.shape
+        self.m, self.n = self.A.getHeight(), self.A.getWidth()
         self.eps = accuracy
 
     def solve(self, debug: bool = False) -> SimplexSolution:
         """Solve maximization linear programming problem using simplex method in matrices.
 
-        Maximize z = c_1*x_1 + ... + c_n*x_n    
+        Input is in standard form.
+
+        Maximize z = c_1*x_1 + ... + c_n*x_n
             subject to
                 a_1_1*x_1 + ... + a_1_n*x_n <= b_1
                             ...
@@ -68,19 +71,24 @@ class Simplex:
 
         # [Step 0]
         # Constructing a starting basic feasible solution
-        B = np.identity(self.m, dtype=np.double)
-        C_B = np.zeros(self.m, dtype=np.double)
-        basic = list(range(self.n - self.m, self.n))  # keeping track of basic variables
+        B: Matrix = IdentityMatrix(self.m)
+        C_B: Vector = Vector([0]*self.m)
+        # keeping track of basic variables
+        basic: list[int] = list(range(self.n - self.m, self.n))
 
         while True:
             # [Step 1]
             # Finding the inverse of B
-            B_inv = np.linalg.inv(B)
+            try:
+                B_inv: Matrix = B.inverseMatrix()
+            except Exception as e:
+                # If we can't find the inverse, then something wrong with input
+                raise InfeasibleSolution from e
 
             # Compute some matrices that will be used later
-            X_B = B_inv @ self.b
-            z = C_B @ X_B
-            C_B_times_B_inv = C_B @ B_inv
+            X_B: Vector = (B_inv * self.b.vTranspose()).m2vTranspose()
+            z: float = C_B * X_B
+            C_B_times_B_inv: Vector = C_B ^ B_inv
 
             if debug:
                 print("-" * 10)
@@ -100,9 +108,9 @@ class Simplex:
                     continue
 
                 # Calculate the delta
-                P_j = self.A[:, [j]]
-                z_j = C_B_times_B_inv @ P_j
-                delta = z_j.item() - self.C[j]
+                P_j: Vector = self.A.getColumn(j)
+                z_j: float = C_B_times_B_inv * P_j
+                delta = z_j - self.C[j]
 
                 if debug:
                     print(j, z_j, self.C[j], delta)
@@ -125,27 +133,26 @@ class Simplex:
             if cnt == self.n - self.m:
                 # Example: entering epsilon of 0.001 means
                 # rounding to 3 digits after the decimal point
-                round_decimals = round(-np.log10(self.eps))
-                X_decision = np.zeros(self.n - self.m)
-
+                round_decimals = round(-log10(self.eps))
+                X_decision: Vector = Vector([0]*(self.n - self.m))
                 # Returning only the original variables
                 # without slack variables
                 for i, j in enumerate(basic):
                     if j < self.n - self.m:
                         X_decision[j] = round(X_B[i], round_decimals)
 
-                return SimplexSolution(X_decision, round(z.item(), round_decimals))
+                return SimplexSolution(X_decision, round(z, round_decimals))
 
             # [Step 3]
             # Again compute some matrices that will be used later
-            P_j = self.A[:, [entering_j]]
-            B_inv_times_P_j = B_inv @ P_j
+            P_j: Vector = self.A.getColumn(entering_j)
+            B_inv_times_P_j: Vector = (B_inv * P_j.vTranspose()).m2vTranspose()
 
             if debug:
                 print("B_inv*P_j:", B_inv_times_P_j)
 
             # Condition for unbounded solution
-            if np.all(B_inv_times_P_j <= self.eps):
+            if all([x <= self.eps for x in B_inv_times_P_j.getVector()]):
                 raise InfeasibleSolution
             else:
                 # If everything is ok, then we do the ratio test
@@ -158,10 +165,10 @@ class Simplex:
                         i += 1
                         continue
 
-                    ratio = X_B[i] / B_inv_times_P_j[i].item()
+                    ratio = X_B[i] / B_inv_times_P_j[i]
 
                     if debug:
-                        print(X_B[i], B_inv_times_P_j[i].item(), ratio)
+                        print(X_B[i], B_inv_times_P_j[i], ratio)
 
                     # Update current best candidate (most minimal positive)
                     # for leaving vector
@@ -180,27 +187,28 @@ class Simplex:
             # Also update the objective vector coefficient of B
             for i in range(self.m):
                 if basic[i] == leaving_i:
-                    B[:, [i]] = P_j
+                    B.setColumn(i, P_j)
                     basic[i] = entering_j
                     C_B[i] = self.C[entering_j]
                     break
 
 
 def main():
-    A, b, C = np.array(
+    A = Matrix(
         [
             [6, 4],
             [1, 2],
             [-1, 1],
             [0, 1],
-        ],
-        dtype=np.double,
+        ]
     )
-    b = np.array([24, 6, 1, 2], dtype=np.double)
-    C = np.array([5, 4], dtype=np.double)
+    b = Vector([24, 6, 1, 2])
+    C = Vector([5, 4])
     eps = 1e-9
 
-    print(Simplex(A, b, C, eps).solve())
+    solution = Simplex(A, b, C, eps).solve()
+    print(solution.decision_variables.getVector())
+    print(solution.value)
 
 
 if __name__ == "__main__":

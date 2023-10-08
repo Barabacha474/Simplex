@@ -1,27 +1,30 @@
-from numpy import array, double
+from simplex import Matrix, Vector
 from simplex import Simplex, InfeasibleSolution
 
 
 def main():
-    m = int(input("Enter number of constraints: "))
-
-    C: list[float] = [float(x) for x in input("Enter objective function coefficients vector: ").split()]
+    print("Enter objective function coefficients vector: ")
+    C: Vector = Vector()
+    C.vInput()
 
     print("Enter constraints coefficients matrix:")
-    A: list[list[float]] = [[float(x) for x in input().split()] for _ in range(m)]
+    A: Matrix = Matrix()
+    A.mInput()
 
-    b: list[float] = [float(x) for x in input("Enter constraints right hand side vector: ").split()]
+    print("Enter constraints right hand side vector: ")
+    b: Vector = Vector()
+    b.vInput()
 
     eps = float(input("Enter approximation accuracy: "))
 
-    solver = Simplex(array(A, dtype=double), array(b, dtype=double), array(C, dtype=double), eps)
+    solver = Simplex(A, b, C, eps)
 
     try:
         solution = solver.solve()
     except InfeasibleSolution:
         print("Infeasible solution")
     else:
-        print("Decision variables x*:", *solution.decision_variables)
+        print("Decision variables x*:", *solution.decision_variables.getVector())
         print("Value:", solution.value)
 
 
