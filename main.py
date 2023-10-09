@@ -24,8 +24,8 @@ def main():
     except InfeasibleSolution:
         print("Infeasible solution")
     else:
-        print("Decision variables x*:", *solution.decision_variables.getVector())
-        print("Value:", solution.value)
+        print("A vector of decision variables - X∗: ", *solution.decision_variables.getVector())
+        print("Maximum (minimum) value of the objective function: ", solution.value)
 
 
 if __name__ == "__main__":
