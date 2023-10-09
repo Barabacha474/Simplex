@@ -3,19 +3,19 @@ from simplex import Simplex, InfeasibleSolution
 
 
 def main():
-    print("Enter objective function coefficients vector: ")
+    print("Enter a vector of coefficients of objective function - C:")
     C: Vector = Vector()
     C.vInput()
 
-    print("Enter constraints coefficients matrix:")
+    print("Enter a matrix of coefficients of constraint function - A:")
     A: Matrix = Matrix()
     A.mInput()
 
-    print("Enter constraints right hand side vector: ")
+    print("Enter a vector of right-hand side numbers - b:")
     b: Vector = Vector()
     b.vInput()
 
-    eps = float(input("Enter approximation accuracy: "))
+    eps = float(input("Enter the approximation accuracy ε:\n"))
 
     solver = Simplex(A, b, C, eps)
 

@@ -191,25 +191,3 @@ class Simplex:
                     basic[i] = entering_j
                     C_B[i] = self.C[entering_j]
                     break
-
-
-def main():
-    A = Matrix(
-        [
-            [6, 4],
-            [1, 2],
-            [-1, 1],
-            [0, 1],
-        ]
-    )
-    b = Vector([24, 6, 1, 2])
-    C = Vector([5, 4])
-    eps = 1e-9
-
-    solution = Simplex(A, b, C, eps).solve()
-    print(solution.decision_variables.getVector())
-    print(solution.value)
-
-
-if __name__ == "__main__":
-    main()
