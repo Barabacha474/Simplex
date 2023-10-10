@@ -76,6 +76,8 @@ class Simplex:
         # keeping track of basic variables
         basic: list[int] = list(range(self.n - self.m, self.n))
 
+        prev_z = None
+
         while True:
             # [Step 1]
             # Finding the inverse of B
@@ -130,7 +132,7 @@ class Simplex:
 
             # We found the optimal solution
             # (z_j - c_j >= 0 for all nonbasic vectors)
-            if cnt == self.n - self.m:
+            if cnt == self.n - self.m or prev_z is not None and round(z, round(-log10(self.eps))) == round(prev_z, round(-log10(self.eps))):
                 # Example: entering epsilon of 0.001 means
                 # rounding to 3 digits after the decimal point
                 round_decimals = round(-log10(self.eps))
@@ -141,7 +143,13 @@ class Simplex:
                     if j < self.n - self.m:
                         X_decision[j] = round(X_B[i], round_decimals)
 
+                if prev_z is not None and round(z, round(-log10(self.eps))) == round(prev_z, round(-log10(self.eps))):
+                    print("Alternative optima has been detected\nInfinite number of solutions, there is one of them:\n")
                 return SimplexSolution(X_decision, round(z, round_decimals))
+
+            prev_z = z
+
+
 
             # [Step 3]
             # Again compute some matrices that will be used later
