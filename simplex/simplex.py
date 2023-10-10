@@ -132,10 +132,10 @@ class Simplex:
 
             # We found the optimal solution
             # (z_j - c_j >= 0 for all nonbasic vectors)
-            if cnt == self.n - self.m or prev_z is not None and round(z, round(-log10(self.eps))) == round(prev_z, round(-log10(self.eps))):
+            round_decimals = round(-log10(self.eps))
+            if cnt == self.n - self.m or prev_z is not None and round(z, round_decimals) == round(prev_z, round_decimals):
                 # Example: entering epsilon of 0.001 means
                 # rounding to 3 digits after the decimal point
-                round_decimals = round(-log10(self.eps))
                 X_decision: Vector = Vector([0]*(self.n - self.m))
                 # Returning only the original variables
                 # without slack variables
@@ -143,7 +143,7 @@ class Simplex:
                     if j < self.n - self.m:
                         X_decision[j] = round(X_B[i], round_decimals)
 
-                if prev_z is not None and round(z, round(-log10(self.eps))) == round(prev_z, round(-log10(self.eps))):
+                if prev_z is not None and round(z, round_decimals) == round(prev_z, round_decimals):
                     print("Alternative optima has been detected\nInfinite number of solutions, there is one of them:\n")
                 return SimplexSolution(X_decision, round(z, round_decimals))
 
